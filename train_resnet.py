@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 # ── Cấu hình ──────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
-DATASET_DIR = BASE_DIR / "resnet_dataset"
+DATASET_DIR = BASE_DIR / "resnet_dataset_v2"
 OUTPUT_SCRIPT = BASE_DIR / "resnet50_cashew.pt"        # TorchScript
 OUTPUT_WEIGHTS = BASE_DIR / "resnet50_cashew_weights.pt"  # state_dict
 
