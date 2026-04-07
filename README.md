@@ -7,6 +7,20 @@ Automated cashew grading system using a two-stage pipeline:
 
 ---
 
+## Pipeline Results
+
+Each frame is classified consistently — one grade per image, confidence ~100%.
+
+| loai3 (shriveled) | lbw (surface spots) |
+|---|---|
+| ![loai3](assets/demo_1.jpg) | ![lbw](assets/demo_2.jpg) |
+
+| loai2 (yellowish) | loai1 (white) |
+|---|---|
+| ![loai2](assets/demo_3.jpg) | ![loai1](assets/demo_4.jpg) |
+
+---
+
 ## Classes
 
 | Class | Visual characteristic |
