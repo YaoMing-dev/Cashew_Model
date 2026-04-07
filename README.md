@@ -1,77 +1,101 @@
 # Cashew Nut Grading — YOLOv8 + ResNet-50
 
-Hệ thống phân loại hạt điều tự động gồm 2 model kết hợp theo pipeline:
+Automated cashew grading system using a two-stage pipeline:
 
-1. **YOLOv8s** — detect và locate từng hạt điều trong ảnh
-2. **ResNet-50** — phân loại chất lượng từng hạt đã được crop
-
----
-
-## Demo
-
-| | |
-|---|---|
-| ![demo1](assets/demo_1.jpg) | ![demo2](assets/demo_2.jpg) |
-| ![demo3](assets/demo_3.jpg) | ![demo4](assets/demo_4.jpg) |
-
-Màu bbox theo class:
-- 🟢 `tb` &nbsp; 🔵 `loai1` &nbsp; 🔵 `loai2` &nbsp; 🟡 `loai3` &nbsp; 🟣 `lbw` &nbsp; 🔴 `bad_output`
+1. **YOLOv8s** — detects and localizes each individual cashew nut in frame
+2. **ResNet-50** — classifies the grade of each detected nut
 
 ---
 
 ## Classes
 
-| Class | Mô tả |
-|-------|--------|
-| `tb`  | Tiêu biểu (standard) |
-| `loai1` | Loại 1 |
-| `loai2` | Loại 2 |
-| `loai3` | Loại 3 |
-| `lbw` | LBW |
-| `bad_output` | Lỗi / hỏng |
-
----
-
-## Model Files
-
-| File | Mô tả | Format |
-|------|--------|--------|
-| `runs/yolo/cashew_detect/weights/best.pt` | YOLOv8s trained weights | Ultralytics |
-| `yolo_cashew.pt` | YOLOv8s TorchScript export | TorchScript |
-| `resnet50_cashew.pt` | ResNet-50 TorchScript (dùng cho inference) | TorchScript |
-| `resnet50_cashew_weights.pt` | ResNet-50 state dict (dùng để resume training) | PyTorch |
+| Class | Visual characteristic |
+|-------|----------------------|
+| `loai1` | Pure white, clean surface |
+| `loai2` | Yellowish tint |
+| `loai3` | Shriveled / undersized |
+| `lbw` | Dark spots / scorching on surface |
+| `tb` | Skin membrane residue on surface |
+| `bad_output` | Broken / physically damaged |
 
 ---
 
 ## Pipeline
 
 ```
-[Ảnh đầu vào]
-      │
-      ▼
+[Input frame]
+      |
+      v
   YOLOv8s detect
-  (vị trí từng hạt)
-      │
-      ▼
-  Crop từng bbox
-      │
-      ▼
+  (bounding box per nut)
+      |
+      v
+  Crop each bbox
+      |
+      v
   ResNet-50 classify
-  (loại của hạt)
-      │
-      ▼
-[Kết quả: vị trí + loại từng hạt]
+  (grade per nut)
+      |
+      v
+[Output: position + grade for every nut in frame]
 ```
 
 ---
 
-## Kết quả Test
+## Why YOLOv8 + ResNet-50
 
-Test trên 5 ảnh từ validation set:
+### Common misconceptions
 
-- **YOLO**: avg 27.8 hạt/ảnh, confidence 0.85–0.98
-- **ResNet**: confidence >87% trên các crop từ YOLO
-- **ResNet standalone**: 18/18 = 100% accuracy trên sample test
+**YOLO is not a classifier.**
+YOLO is optimized for localization — it finds *where* objects are. Asking it to also distinguish fine-grained quality grades (color, surface texture, shape deformation) is outside its design intent. Its classification head operates on coarse feature maps not suited for subtle inter-class differences like `loai1` vs `loai2`.
+
+**SAM2 is not a classifier either.**
+SAM2 (Segment Anything Model) excels at segmentation — producing precise masks. But segmentation and grading are different problems. SAM2 has no concept of cashew quality; it would need an additional classification head and substantial fine-tuning, making it overengineered for this task.
+
+### Why this combination works
+
+| Requirement | Solution |
+|-------------|----------|
+| Real-time throughput on embedded hardware | YOLOv8s (small, fast) |
+| Fine-grained grade discrimination | ResNet-50 (trained on crops) |
+| Limited labeled data | Transfer learning from ImageNet |
+| Simple deployment | Two `.pt` files, no server required |
+
+ResNet-50 with transfer learning reaches high accuracy on ~400–2000 samples per class — practical for a factory floor where labeling budget is limited. The full pipeline runs comfortably in real-time on a mid-range GPU.
+
+---
+
+## Dataset and Training Notes
+
+### What the previous approach got wrong
+
+Earlier attempts collected data with **mixed grades in the same frame** and **overlapping nuts** (nuts stacked on top of each other). This creates two hard problems:
+
+1. **Mixed frames**: if a frame contains multiple grades, there is no clean label for the whole image — the model receives contradictory signals during training.
+2. **Overlapping / occluded nuts**: neither the camera nor the model can see the full surface of a nut that is partially hidden. Any label assigned to an occluded nut is inherently noisy.
+
+The correct data collection protocol is to stage **one grade per frame** with **nuts separated** (not touching). Train on clean, unambiguous examples first. Harder edge cases (partial occlusion, borderline grades) can be introduced later — but there is a hard ceiling set by physics: if the camera cannot see the relevant surface features, no model can recover that information.
+
+> Clean data first. Harder cases later. Acknowledge the camera's physical limits.
+
+### ResNet training strategy
+
+Two-phase transfer learning:
+- **Phase 1** (10 epochs, backbone frozen): only the classification head trains — fast convergence from ImageNet features
+- **Phase 2** (30 epochs, full fine-tune): entire network adapts to cashew domain at a lower learning rate
+
+Dataset for ResNet is built by running YOLO on labeled single-grade frames, cropping each detected nut, and using the frame label as the crop label. This keeps training and inference in the same visual domain (same camera, same conveyor, same lighting).
+
+---
+
+## Model Files
+
+| File | Description | Format |
+|------|-------------|--------|
+| `runs/yolo/cashew_detect/weights/best.pt` | YOLOv8s trained weights | Ultralytics |
+| `yolo_cashew.pt` | YOLOv8s TorchScript export | TorchScript |
+| `resnet50_cashew.pt` | ResNet-50 for inference | TorchScript |
+| `resnet50_cashew_weights.pt` | ResNet-50 state dict (resume training) | PyTorch |
 
 ---
 
@@ -79,25 +103,19 @@ Test trên 5 ảnh từ validation set:
 
 ### YOLOv8
 
-Dataset: Roboflow (1 class: `cashew`), 391 train / 98 val images
+Dataset: 391 train / 98 val images (1 class: `cashew`)
 
 ```bash
 python train_yolo.py
-# options
 python train_yolo.py --model yolov8s.pt --epochs 100 --batch 16 --device 0
 ```
 
 ### ResNet-50
 
-Dataset: 6-class classification, ~1820 ảnh tổng
-
-Transfer learning 2 phases:
-- Phase 1 (10 epochs): freeze backbone, chỉ train fc
-- Phase 2 (30 epochs): fine-tune toàn bộ
+Dataset: ~9000 crops extracted from single-grade production frames
 
 ```bash
 python train_resnet.py
-# options
 python train_resnet.py --epochs_phase1 10 --epochs_phase2 30
 ```
 
@@ -106,11 +124,11 @@ python train_resnet.py --epochs_phase1 10 --epochs_phase2 30
 ## Test Pipeline
 
 ```bash
-python test_models.py             # test 5 ảnh mặc định
-python test_models.py --images 10 # test 10 ảnh
+python test_models.py             # test 5 images
+python test_models.py --images 10
 ```
 
-Yêu cầu thư mục `valid/images/` để chạy test.
+Requires `valid/images/` directory.
 
 ---
 
@@ -124,6 +142,6 @@ pip install -r requirements.txt
 torch
 torchvision
 ultralytics
-tqdm
 Pillow
+tqdm
 ```
