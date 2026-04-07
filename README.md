@@ -7,6 +7,18 @@ Hệ thống phân loại hạt điều tự động gồm 2 model kết hợp t
 
 ---
 
+## Demo
+
+| | |
+|---|---|
+| ![demo1](assets/demo_1.jpg) | ![demo2](assets/demo_2.jpg) |
+| ![demo3](assets/demo_3.jpg) | ![demo4](assets/demo_4.jpg) |
+
+Màu bbox theo class:
+- 🟢 `tb` &nbsp; 🔵 `loai1` &nbsp; 🔵 `loai2` &nbsp; 🟡 `loai3` &nbsp; 🟣 `lbw` &nbsp; 🔴 `bad_output`
+
+---
+
 ## Classes
 
 | Class | Mô tả |
