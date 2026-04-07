@@ -1,0 +1,14 @@
+# YOLO Dataset - Cashew Nut Detection (from Roboflow)
+path: E:\AI Phuc
+train: train/images
+val: valid/images
+
+nc: 1
+names: ['cashew']
+
+roboflow:
+  workspace: lys-workspace-ipdbs
+  project: lys-workspace-ipdbs
+  version: dataset
+  license: Private
+  url: https://app.roboflow.com/lys-workspace-ipdbs/lys-workspace-ipdbs/dataset

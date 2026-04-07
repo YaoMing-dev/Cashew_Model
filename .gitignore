@@ -1,0 +1,55 @@
+# ── Images (raw datasets) ─────────────────────────────────────────────────────
+loai1/
+loai2/
+loai3/
+tb/
+lbw/
+bad_output/
+badoutput_yl/
+loai1_yl/
+loai2_yl/
+loai3_yl/
+tb_yl/
+lbw_yl/
+cashew_old/
+
+# ── Dataset directories ───────────────────────────────────────────────────────
+resnet_dataset/
+yolo_dataset/
+train/
+valid/
+roboflow_export/
+deployment_package/
+
+# ── Archives ──────────────────────────────────────────────────────────────────
+*.zip
+
+# ── Base pretrained models (not our trained weights) ─────────────────────────
+sam_b.pt
+yolov8s.pt
+yolo11n.pt
+
+# ── YOLO intermediate checkpoints (keep only best.pt) ────────────────────────
+runs/yolo/cashew_detect/weights/epoch*.pt
+runs/yolo/cashew_detect/weights/last.pt
+
+# ── Extra utility scripts (not part of core pipeline) ────────────────────────
+auto_annotate_sam.py
+build_yolo_from_annotations.py
+convert_labelme_to_yolo.py
+convert_polygons_to_bbox.py
+create_deployment_package.py
+evaluate_models.py
+inference_pipeline.py
+prepare_for_roboflow.py
+prepare_resnet_dataset.py
+prepare_yolo_dataset.py
+sam_backend.py
+split_roboflow_dataset.py
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+predefined_classes.txt
+README.roboflow.txt
+test_result.jpg
+__pycache__/
+*.pyc
